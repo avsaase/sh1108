@@ -15,7 +15,7 @@
 //! display.flush().unwrap();
 //! ```
 
-use display_interface::{DisplayError, WriteOnlyDataCommand};
+use display_interface::{AsyncWriteOnlyDataCommand, DisplayError};
 use hal::{delay::DelayNs, digital::OutputPin};
 
 use crate::{
@@ -28,7 +28,7 @@ const BUFFER_SIZE: usize = 160 * 160 / 8;
 /// Graphics mode handler
 pub struct GraphicsMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     properties: DisplayProperties<DI>,
     buffer: [u8; BUFFER_SIZE],
@@ -36,7 +36,7 @@ where
 
 impl<DI> DisplayModeTrait<DI> for GraphicsMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     /// Create new GraphicsMode instance
     fn new(properties: DisplayProperties<DI>) -> Self {
@@ -54,7 +54,7 @@ where
 
 impl<DI> GraphicsMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     /// Clear the display buffer. You need to call `disp.flush()` for any effect on the screen
     pub fn clear(&mut self) {
@@ -79,21 +79,23 @@ where
     }
 
     /// Write out data to display
-    pub fn flush(&mut self) -> Result<(), DisplayError> {
+    pub async fn flush(&mut self) -> Result<(), DisplayError> {
         let display_size = self.properties.get_size();
 
         // Ensure the display buffer is at the origin of the display before we send the full frame
         // to prevent accidental offsets
         let (display_width, display_height) = display_size.dimensions();
         let column_offset = display_size.column_offset();
-        self.properties.set_draw_area(
-            (column_offset, 0),
-            (display_width + column_offset, display_height),
-        )?;
+        self.properties
+            .set_draw_area(
+                (column_offset, 0),
+                (display_width + column_offset, display_height),
+            )
+            .await?;
 
         let length = (display_width as usize) * (display_height as usize) / 8;
 
-        self.properties.draw(&self.buffer[..length])
+        self.properties.draw(&self.buffer[..length]).await
     }
 
     /// Turn a pixel on or off. A non-zero `value` is treated as on, `0` as off. If the X and Y
@@ -148,8 +150,8 @@ where
 
     /// Display is set up in column mode, i.e. a byte walks down a column of 8 pixels from
     /// column 0 on the left, to column _n_ on the right
-    pub fn init(&mut self) -> Result<(), DisplayError> {
-        self.properties.init_column_mode()
+    pub async fn init(&mut self) -> Result<(), DisplayError> {
+        self.properties.init_column_mode().await
     }
 
     /// Get display dimensions, taking into account the current rotation of the display
@@ -158,19 +160,19 @@ where
     }
 
     /// Set the display rotation
-    pub fn set_rotation(&mut self, rot: DisplayRotation) -> Result<(), DisplayError> {
-        self.properties.set_rotation(rot)
+    pub async fn set_rotation(&mut self, rot: DisplayRotation) -> Result<(), DisplayError> {
+        self.properties.set_rotation(rot).await
     }
 
     /// Turn the display on or off. The display can be drawn to and retains all
     /// of its memory even while off.
-    pub fn display_on(&mut self, on: bool) -> Result<(), DisplayError> {
-        self.properties.display_on(on)
+    pub async fn display_on(&mut self, on: bool) -> Result<(), DisplayError> {
+        self.properties.display_on(on).await
     }
 
     /// Set the display contrast
-    pub fn set_contrast(&mut self, contrast: u8) -> Result<(), DisplayError> {
-        self.properties.set_contrast(contrast)
+    pub async fn set_contrast(&mut self, contrast: u8) -> Result<(), DisplayError> {
+        self.properties.set_contrast(contrast).await
     }
 }
 
@@ -185,7 +187,7 @@ use embedded_graphics_core::{
 #[cfg(feature = "graphics")]
 impl<DI> DrawTarget for GraphicsMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     type Color = BinaryColor;
     type Error = DisplayError;
@@ -210,7 +212,7 @@ where
 #[cfg(feature = "graphics")]
 impl<DI> OriginDimensions for GraphicsMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     fn size(&self) -> Size {
         let (w, h) = self.get_dimensions();

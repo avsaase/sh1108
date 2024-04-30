@@ -1,6 +1,6 @@
 //! Abstraction of different operating modes for the sh1108
 
-use display_interface::WriteOnlyDataCommand;
+use display_interface::AsyncWriteOnlyDataCommand;
 
 use crate::properties::DisplayProperties;
 
@@ -20,7 +20,7 @@ impl<MODE> DisplayMode<MODE> {
     /// Setup display to run in requested mode
     pub fn new<DI>(properties: DisplayProperties<DI>) -> Self
     where
-        DI: WriteOnlyDataCommand,
+        DI: AsyncWriteOnlyDataCommand,
         MODE: DisplayModeTrait<DI>,
     {
         DisplayMode(MODE::new(properties))
@@ -30,7 +30,7 @@ impl<MODE> DisplayMode<MODE> {
     // TODO: Figure out how to stay as generic DisplayMode but act as particular mode
     pub fn into<DI, NMODE: DisplayModeTrait<DI>>(self) -> NMODE
     where
-        DI: WriteOnlyDataCommand,
+        DI: AsyncWriteOnlyDataCommand,
         MODE: DisplayModeTrait<DI>,
     {
         let properties = self.0.release();

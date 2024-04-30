@@ -4,21 +4,21 @@
 //! builder. Used as a source to coerce the driver into richer modes like
 //! [`GraphicsMode`](../graphics/index.html).
 
-use display_interface::WriteOnlyDataCommand;
+use display_interface::AsyncWriteOnlyDataCommand;
 
 use crate::{mode::displaymode::DisplayModeTrait, properties::DisplayProperties};
 
 /// Raw display mode
 pub struct RawMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     properties: DisplayProperties<DI>,
 }
 
 impl<DI> DisplayModeTrait<DI> for RawMode<DI>
 where
-    DI: WriteOnlyDataCommand,
+    DI: AsyncWriteOnlyDataCommand,
 {
     /// Create new RawMode instance
     fn new(properties: DisplayProperties<DI>) -> Self {
@@ -31,7 +31,7 @@ where
     }
 }
 
-impl<DI: WriteOnlyDataCommand> RawMode<DI> {
+impl<DI: AsyncWriteOnlyDataCommand> RawMode<DI> {
     /// Create a new raw display mode
     pub fn new(properties: DisplayProperties<DI>) -> Self {
         RawMode { properties }

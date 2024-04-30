@@ -44,6 +44,7 @@
 //! ```
 
 use core::marker::PhantomData;
+use display_interface::AsyncWriteOnlyDataCommand;
 use hal::{
     self,
     digital::{ErrorType, OutputPin},
@@ -96,7 +97,7 @@ impl Builder {
     /// Finish the builder and use the given interface to communicate with the display.
     pub fn connect<DI>(self, interface: DI) -> DisplayMode<RawMode<DI>>
     where
-        DI: display_interface::WriteOnlyDataCommand,
+        DI: AsyncWriteOnlyDataCommand,
     {
         let properties = DisplayProperties::new(interface, self.display_size, self.rotation);
         DisplayMode::<RawMode<DI>>::new(properties)
